@@ -1,9 +1,7 @@
 import io
 import os
-from pickle import TRUE
 import string
 import packaide
-#import svgelements
 import tempfile
 from svgpathtools import svg2paths, wsvg, parse_path
 from typing import List
@@ -13,6 +11,7 @@ import shapely.geometry
 import shapely.ops
 from xml.dom import minidom
 import svgwrite
+import time
 
 # FROM PACKAIDE
 # Given an svg Path element, discretize it into a polygon of points that
@@ -129,13 +128,12 @@ class PackaideNester:
             # [], [], sheet_svg_attributes)]
         sheets = []
         temp_file_path = os.path.join(
-            tempfile.gettempdir(), "nesting_result.svg")
+            tempfile.gettempdir(), f'nesting_result_{round(time.time() * 1000)}.svg')
         dwg = svgwrite.Drawing(temp_file_path, size=(
             width, height), viewBox=(f'0 0 {width} {height}'))
         dwg.save()
         with open(temp_file_path) as f:
             sheets.append(f.read())
-        print(sheets[0])
         
         parts_svg_attributes = dict(svg_attributes)
         xmin, ymin, width, height = map(float, svg_attributes['viewBox']
@@ -145,14 +143,14 @@ class PackaideNester:
         parts_svg_attributes['height'] = f'{height}'
 
         parts = self.string_for_paths(
-            result_paths[:-2], result_attributes[:-2], parts_svg_attributes)
+            result_paths[:-1], result_attributes[:-1], parts_svg_attributes)
 
         return sheets, parts, svg_attributes['width'], svg_attributes['height']
 
     def string_for_paths(self, paths, path_attributes, svg_attributes={}):
         # TODO skip write/load cycle by using in memory stream
         temp_file_path = os.path.join(
-            tempfile.gettempdir(), "nesting_result.svg")
+            tempfile.gettempdir(), f'nesting_result_{round(time.time() * 1000)}.svg')
         wsvg(paths, attributes=path_attributes,
              svg_attributes=svg_attributes, filename=temp_file_path)
 
