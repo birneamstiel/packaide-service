@@ -1,0 +1,3 @@
+flask
+svgelements
+flask-cors
