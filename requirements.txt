@@ -1,3 +1,10 @@
 flask
-svgelements
 flask-cors
+
+# svg parsing and writing
+svgelements
+svgpathtools
+svgwrite
+
+# dev dependencies, probably not necessary in production
+shapely
