@@ -1,0 +1,3 @@
+[submodule "Packaide"]
+	path = Packaide
+	url = https://github.com/DanielLiamAnderson/Packaide
