@@ -42,8 +42,9 @@ def to_shapely_polygon(points):
 
 class PackaideNester:
 
-    def __init__(self, parts_offset):
+    def __init__(self, parts_offset, tolerance):
         self.parts_offset = parts_offset
+        self.tolerance = tolerance
 
     def nest(self, sheets: List[str], parts_svg: str, original_width: str = '', original_height: str = ''):
         assert len(sheets) == 1, "Multiple sheets are not yet supported by nester."
@@ -56,7 +57,7 @@ class PackaideNester:
         result, placed, fails = packaide.pack(
             [sheet],                  # A list of sheets (SVG documents)
             parts_svg,                   # An SVG document containing the parts
-            tolerance=2.5,          # Discretization tolerance
+            tolerance=self.tolerance,          # Discretization tolerance
             offset=self.parts_offset,               # The offset distance around each shape (dilation)
             partial_solution=True,  # Whether to return a partial solution
             rotations=4,            # The number of rotations of parts to try

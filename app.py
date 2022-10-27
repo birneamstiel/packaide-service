@@ -34,7 +34,10 @@ def nest_post():
     content = request.json
     
     offset = float(content.get('Offset', 0.1))
-    nester = PackaideNester(offset)
+    tolerance = float(content.get('Tolerance', 0.1))
+    assert offset > 0.0 and tolerance > 0.0, "offset and tolerance need to be positive"
+
+    nester = PackaideNester(offset, tolerance)
 
     # TODO use enum?
     if format == 'Explicit':
