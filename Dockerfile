@@ -10,13 +10,16 @@ RUN apt-get install -y nano
 
 WORKDIR /packaide
 COPY . .
+WORKDIR /packaide/Packaide
 RUN pwd
 RUN ls
 
 RUN python3 -m pip install --user . -r requirements.txt
-RUN python3 test.py
-ENTRYPOINT sleep infinity
 
+WORKDIR ..
+RUN python3 -m pip install -r requirements.txt
+
+ENTRYPOINT [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
 
 # ARG dockerfile_url
 # ENV DOCKERFILE_URL=$dockerfile_url
