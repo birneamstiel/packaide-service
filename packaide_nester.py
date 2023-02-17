@@ -111,9 +111,21 @@ class PackaideNester:
 
         # return svg_result
 
+    # parsing a combined parts and sheet svg under the assumption that the sheet element is the last one
     def parse(self, data: string):
         result_paths, result_attributes, svg_attributes = svg2paths(
             io.StringIO(data), return_svg_attributes=True)
+
+        # clean paths by removing empty ones, shouldnt' be necessary but apparently it is
+        to_be_deleted = []
+        for i in range(len(result_paths) - 1):
+            if (result_attributes[i]['d'] == ""):
+                to_be_deleted.append(result_paths[i])
+        for p in to_be_deleted:
+            i = result_paths.index(p)
+            result_paths.pop(i)
+            result_attributes.pop(i)
+
         # TODO set viewbox of sheet element 
         sheet_path = result_paths[-1]
         (xmin, xmax, ymin, ymax) = sheet_path.bbox()

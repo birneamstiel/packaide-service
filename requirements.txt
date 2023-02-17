@@ -1,5 +1,6 @@
 flask
 flask-cors
+waitress
 
 # svg parsing and writing
 svgelements

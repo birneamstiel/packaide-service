@@ -14,12 +14,15 @@ WORKDIR /packaide/Packaide
 RUN pwd
 RUN ls
 
+# Install packaide (together with dependencies)
 RUN python3 -m pip install --user . -r requirements.txt
 
 WORKDIR ..
 RUN python3 -m pip install -r requirements.txt
 
-ENTRYPOINT [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
+CMD ["waitress-serve", "--call CoreApi:create_app"]
+# ENTRYPOINT [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
+
 
 # ARG dockerfile_url
 # ENV DOCKERFILE_URL=$dockerfile_url
