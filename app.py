@@ -1,5 +1,6 @@
 from flask import Flask, url_for, request, Response
 from flask_cors import CORS, cross_origin
+import json
 
 from packaide_nester import PackaideNester
 
@@ -47,8 +48,31 @@ def nest_post():
         sheets, parts, original_width, original_height = nester.parse(content['RawSvgData'])
 
     result = nester.nest(sheets, parts, original_width, original_height)
-
-
-
-    
     return Response(result, mimetype="image/svg+xml", headers={"Content-disposition": "attachment; filename=result.svg"})
+
+
+@app.post("/nestPolygons")
+@cross_origin()
+def nest_polygons_post():
+    format = request.args.get('format')
+    content = request.json
+
+    offset = float(content.get('Offset', 0.1))
+    tolerance = float(content.get('Tolerance', 0.1))
+    assert offset > 0.0 and tolerance > 0.0, "offset and tolerance need to be positive"
+
+    nester = PackaideNester(offset, tolerance)
+
+    sheet_hole_polygons = content['Sheets']
+    part_polygons = content['Parts']
+    print(part_polygons)
+    width = content['Width']
+    height = content['Height']
+
+    result = nester.nest_polygons(
+        width, height, sheet_hole_polygons, part_polygons)
+    return json.dumps({"transforms": result})
+
+
+def parse_coordinate_array_from_json(string):
+    return

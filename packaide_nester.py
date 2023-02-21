@@ -1,7 +1,9 @@
 import io
 import os
 import string
-import packaide
+# import packaide
+# from Packaide.src import pack_polygons
+from Packaide.python.packaide import packaide
 import tempfile
 from svgpathtools import svg2paths, wsvg, parse_path
 from typing import List
@@ -9,6 +11,7 @@ import svgelements
 import math
 import shapely.geometry
 import shapely.ops
+import shapely.affinity
 from xml.dom import minidom
 import svgwrite
 import time
@@ -44,6 +47,35 @@ class PackaideNester:
     def __init__(self, parts_offset, tolerance):
         self.parts_offset = parts_offset
         self.tolerance = tolerance
+
+    def nest_polygons(self, width, height, sheets_hole_data, parts_data):
+        self.dbg_print_input(sheets_hole_data, parts_data)
+
+        hole_polygons_for_sheets = [[shapely.geometry.Polygon(hole) for hole in self.shapely_polygon_from_array(
+            sheet).interiors] for sheet in sheets_hole_data]
+        part_polygons = [self.shapely_polygon_from_array(
+            part) for part in parts_data]
+
+        # Attempts to pack as many of the parts as possible.
+        result, placed, fails = packaide.pack_polygons(
+            width,
+            height,
+            hole_polygons_for_sheets,
+            part_polygons,                   # An SVG document containing the parts
+            tolerance=self.tolerance,          # Discretization tolerance
+            # The offset distance around each shape (dilation)
+            offset=self.parts_offset,
+            partial_solution=True,  # Whether to return a partial solution
+            rotations=4,            # The number of rotations of parts to try
+            persist=True)
+            
+        assert len(
+            result) == 1, "Multiple sheets are not yet supported by nester."
+        
+        (_, transforms_result) = result[0]
+
+        self.dbg_print_result(sheets_hole_data, parts_data, transforms_result)
+        return transforms_result
 
     def nest(self, sheets: List[str], parts_svg: str, original_width: str = '', original_height: str = ''):
         assert len(sheets) == 1, "Multiple sheets are not yet supported by nester."
@@ -182,3 +214,40 @@ class PackaideNester:
                 poly = discretize_path(element.subpath(0), 0.1).simplify(0.1)
                 print(poly.bounds)
 
+    def dbg_print_input(self, sheet_arrays, part_arrays):
+        sheet = self.shapely_polygon_from_array(sheet_arrays[0])
+        parts = [self.shapely_polygon_from_array(
+            part) for part in part_arrays]
+        print("#### Parsed Sheet and Parts: ####")
+        print("<svg>")
+        print(sheet.svg())
+        for part in parts:
+            print(part.svg())
+        print("</svg>")
+
+    def dbg_print_result(self, sheet_arrays, part_arrays, transforms):
+        sheet = self.shapely_polygon_from_array(sheet_arrays[0])
+        parts = [self.shapely_polygon_from_array(
+            part) for part in part_arrays]
+        nested_parts = [] 
+        for index, transform in enumerate(transforms):
+            polygon = parts[index]
+            polygon = shapely.affinity.rotate(polygon, transform[2], origin=(transform[3], transform[4]))
+            polygon = shapely.affinity.translate(
+                polygon, transform[0], transform[1])
+            nested_parts.append(polygon)
+
+        print("#### Nesting Result: ####")
+        print("<svg>")
+        print(sheet.svg())
+        for nested_part in nested_parts:
+            print(nested_part.svg())
+        print("</svg>")
+
+    def shapely_polygon_from_array(self, polygon_array):
+        # poly = shapely.geometry.Polygon([p for p in polygon_array[0]])
+        # holes = [shapely.geometry.LinearRing([p for p in h]) for h in polygon_array[1]]
+        ext = polygon_array[0]
+        holes = polygon_array[1] if len(polygon_array) > 1 else None
+        polygon = shapely.geometry.Polygon(ext, holes)
+        return polygon
