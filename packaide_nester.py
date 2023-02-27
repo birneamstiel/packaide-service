@@ -49,12 +49,16 @@ class PackaideNester:
         self.tolerance = tolerance
 
     def nest_polygons(self, width, height, sheets_hole_data, parts_data):
-        self.dbg_print_input(sheets_hole_data, parts_data)
-
-        hole_polygons_for_sheets = [[shapely.geometry.Polygon(hole) for hole in self.shapely_polygon_from_array(
-            sheet).interiors] for sheet in sheets_hole_data]
+        sheet_polygons = [self.shapely_polygon_from_array(sheet_data) for sheet_data in sheets_hole_data]
+        hole_polygons_for_sheets = [[shapely.geometry.Polygon(hole) for hole in sheet.interiors] for sheet in sheet_polygons]
         part_polygons = [self.shapely_polygon_from_array(
             part) for part in parts_data]
+        
+        # TODO packaide doesnt seem to handle parts with holes well
+        part_polygons = [shapely.geometry.Polygon(part.exterior) for part in part_polygons]
+
+        self.dbg_print_input(sheet_polygons[0], part_polygons)
+
 
         # Attempts to pack as many of the parts as possible.
         result, placed, fails = packaide.pack_polygons(
@@ -74,7 +78,8 @@ class PackaideNester:
         
         (_, transforms_result) = result[0]
 
-        self.dbg_print_result(sheets_hole_data, parts_data, transforms_result)
+        self.dbg_print_result(
+            sheet_polygons[0], part_polygons, transforms_result)
         return transforms_result
 
     def nest(self, sheets: List[str], parts_svg: str, original_width: str = '', original_height: str = ''):
@@ -214,10 +219,7 @@ class PackaideNester:
                 poly = discretize_path(element.subpath(0), 0.1).simplify(0.1)
                 print(poly.bounds)
 
-    def dbg_print_input(self, sheet_arrays, part_arrays):
-        sheet = self.shapely_polygon_from_array(sheet_arrays[0])
-        parts = [self.shapely_polygon_from_array(
-            part) for part in part_arrays]
+    def dbg_print_input(self, sheet, parts):
         print("#### Parsed Sheet and Parts: ####")
         print("<svg>")
         print(sheet.svg())
@@ -225,12 +227,11 @@ class PackaideNester:
             print(part.svg())
         print("</svg>")
 
-    def dbg_print_result(self, sheet_arrays, part_arrays, transforms):
-        sheet = self.shapely_polygon_from_array(sheet_arrays[0])
-        parts = [self.shapely_polygon_from_array(
-            part) for part in part_arrays]
+    def dbg_print_result(self, sheet, parts, transforms):
         nested_parts = [] 
         for index, transform in enumerate(transforms):
+            if transform is None:
+                continue
             polygon = parts[index]
             polygon = shapely.affinity.rotate(polygon, transform[2], origin=(transform[3], transform[4]))
             polygon = shapely.affinity.translate(
