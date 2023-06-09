@@ -48,12 +48,12 @@ class PackaideNester:
         self.parts_offset = parts_offset
         self.tolerance = tolerance
 
-    def nest_polygons(self, width, height, sheets_hole_data, parts_data):
+    def nest_polygons(self, width, height, sheets_hole_data, parts_data, heuristic = 0):
         sheet_polygons = [self.shapely_polygon_from_array(sheet_data) for sheet_data in sheets_hole_data]
         hole_polygons_for_sheets = [[shapely.geometry.Polygon(hole) for hole in sheet.interiors] for sheet in sheet_polygons]
         part_polygons = [self.shapely_polygon_from_array(
             part) for part in parts_data]
-        
+
         # TODO packaide doesnt seem to handle parts with holes well
         part_polygons = [shapely.geometry.Polygon(part.exterior) for part in part_polygons]
 
@@ -71,8 +71,9 @@ class PackaideNester:
             offset=self.parts_offset,
             partial_solution=True,  # Whether to return a partial solution
             rotations=4,            # The number of rotations of parts to try
-            persist=True)
-            
+            persist=True,
+            heuristic=heuristic)
+
         assert len(
             result) == 1, "Multiple sheets are not yet supported by nester."
         

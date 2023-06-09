@@ -60,6 +60,7 @@ def nest_polygons_post():
     offset = float(content.get('Offset', 0.1))
     tolerance = float(content.get('Tolerance', 0.1))
     assert offset > 0.0 and tolerance > 0.0, "offset and tolerance need to be positive"
+    heuristic = int(content.get('Heuristic', 0))
 
     nester = PackaideNester(offset, tolerance)
 
@@ -70,8 +71,10 @@ def nest_polygons_post():
     height = content['Height']
 
     result = nester.nest_polygons(
-        width, height, sheet_hole_polygons, part_polygons)
-    return json.dumps({"transforms": result})
+        width, height, sheet_hole_polygons, part_polygons, heuristic)
+    result_json = json.dumps({"transforms": result})
+
+    return result_json
 
 
 def parse_coordinate_array_from_json(string):
